@@ -27,3 +27,4 @@ curl -X POST -d '{"hello":"world"}' -H "Content-type: application/json" http://l
 
 - [HTTP Server - Go Web Examples](https://gowebexamples.com/http-server/)
 - [Routing (using gorilla/mux) - Go Web Examples](https://gowebexamples.com/routes-using-gorilla-mux/)
+- [Accepting Github Webhooks with Go · groob.io](https://groob.io/tutorial/go-github-webhook/)

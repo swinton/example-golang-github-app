@@ -2,7 +2,6 @@ package web
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -19,17 +18,18 @@ func HookRouter(path string) *mux.Router {
 	r := mux.NewRouter()
 
 	r.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		// Read the incoming request
-		body, err := ioutil.ReadAll(r.Body)
+		// Read the incoming request as JSON
+		body := make(map[string]interface{})
+		err := json.NewDecoder(r.Body).Decode(&body)
 		if err != nil {
-			log.Fatal(err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-
+			log.Println(err)
+			http.Error(w, "Bad Request", http.StatusBadRequest)
 			return
 		}
 
-		// Log the request body
-		log.Printf("Received: %s\n", string(body))
+		// Log the request headers and body
+		log.Printf("headers: %v\n", r.Header)
+		log.Printf("body: %v\n", body)
 
 		// Send output as application/json
 		resp := HookResponse{
