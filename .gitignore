@@ -16,3 +16,6 @@
 
 # Build artifacts
 bin
+
+# Project-specific environment variables, powered by direnv
+.envrc
