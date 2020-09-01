@@ -23,6 +23,27 @@ Send an example webhook:
 curl -X POST -d '{"hello":"world"}' -H "Content-type: application/json" http://localhost:8000/
 ```
 
+Expose the endpoint over the public internet using `ngrok`:
+
+```shell
+ngrok http 8000
+```
+
+Alternatively, setup an [`ngrok` configuration file](https://ngrok.com/docs#config):
+
+```yaml
+tunnels:
+  main:
+    proto: http
+    addr: 8000
+```
+
+And then:
+
+```shell
+ngrok start main
+```
+
 ## Resources
 
 - [HTTP Server - Go Web Examples](https://gowebexamples.com/http-server/)
