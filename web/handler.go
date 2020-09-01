@@ -2,9 +2,11 @@ package web
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 
+	"github.com/google/go-github/github"
 	"github.com/gorilla/mux"
 )
 
@@ -18,9 +20,16 @@ func HookRouter(path string) *mux.Router {
 	r := mux.NewRouter()
 
 	r.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		// Read the incoming request as JSON
-		body := make(map[string]interface{})
-		err := json.NewDecoder(r.Body).Decode(&body)
+		// Read the incoming request
+		payload, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		// Parse the incoming request into an event
+		event, err := github.ParseWebHook(github.WebHookType(r), payload)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, "Bad Request", http.StatusBadRequest)
@@ -29,9 +38,20 @@ func HookRouter(path string) *mux.Router {
 
 		// Log the request headers and body
 		log.Printf("headers: %v\n", r.Header)
-		log.Printf("body: %v\n", body)
+		log.Printf("event type: %T\n", event)
 
-		// Send output as application/json
+		// Handle the event
+		switch e := event.(type) {
+		case *github.IssuesEvent:
+			log.Printf("installation id: %d\n", *e.Installation.ID)
+			log.Printf("issue id: %d\n", *e.Issue.ID)
+		default:
+			log.Printf("Unknown event type: %s\n", github.WebHookType(r))
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		// Send response as application/json
 		resp := HookResponse{
 			Received: true,
 		}
