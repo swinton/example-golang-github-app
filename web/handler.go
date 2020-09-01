@@ -47,6 +47,16 @@ func HookRouter(app gh.App, path string) *mux.Router {
 		case *github.IssuesEvent:
 			log.Printf("installation id: %d\n", *e.Installation.ID)
 			log.Printf("issue id: %d\n", *e.Issue.ID)
+
+			// Instantiate client
+			installation := gh.Installation{ID: *e.Installation.ID}
+			client, err := gh.NewEnterpriseClient(app, installation)
+			if err != nil {
+				log.Println(err)
+				http.Error(w, "Server Error", http.StatusInternalServerError)
+				return
+			}
+			log.Printf("client %s instantiated for %s\n", client.UserAgent, client.BaseURL)
 		default:
 			log.Printf("Unknown event type: %s\n", github.WebHookType(r))
 			http.Error(w, "Bad Request", http.StatusBadRequest)
