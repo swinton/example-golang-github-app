@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/swinton/example-golang-github-app/gh"
+	"github.com/swinton/example-golang-github-app/probotize"
 )
 
 var ctx = context.Background()
@@ -24,7 +25,11 @@ type HookResponse struct {
 func HookRouter(app gh.App, path string) *mux.Router {
 	r := mux.NewRouter()
 
-	r.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc(path, probotize.Probotize(func(w http.ResponseWriter, r *http.Request) {
+		// Get our Probot from the request context
+		probot, _ := probotize.FromContext(r.Context())
+		log.Printf("probot is: %s\n", probot)
+
 		// Read the incoming request
 		payload, err := ioutil.ReadAll(r.Body)
 		if err != nil {
@@ -85,7 +90,7 @@ func HookRouter(app gh.App, path string) *mux.Router {
 		}
 		w.Header().Add("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(resp)
-	}).Methods("POST")
+	})).Methods("POST")
 
 	return r
 }
