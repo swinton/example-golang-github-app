@@ -8,6 +8,8 @@ import (
 
 	"github.com/google/go-github/github"
 	"github.com/gorilla/mux"
+
+	"github.com/swinton/example-golang-github-app/gh"
 )
 
 // HookResponse defines the shape of our HookRouter responses
@@ -16,7 +18,7 @@ type HookResponse struct {
 }
 
 // HookRouter returns a new webhook router that can be plugged into an HTTP server to receive webhooks
-func HookRouter(path string) *mux.Router {
+func HookRouter(app gh.App, path string) *mux.Router {
 	r := mux.NewRouter()
 
 	r.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {

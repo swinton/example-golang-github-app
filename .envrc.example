@@ -1,2 +1,4 @@
 # Project-specific environment variables, powered by direnv
 # For more details, see: https://direnv.net
+export GITHUB_APP_ID=
+export GITHUB_APP_PRIVATE_KEY_PATH=
