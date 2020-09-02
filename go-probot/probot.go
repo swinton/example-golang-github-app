@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/google/go-github/github"
 )
@@ -26,7 +27,7 @@ func Middleware(next http.Handler) http.Handler {
 
 		// Validate the payload
 		// Per the docs: https://docs.github.com/en/developers/webhooks-and-events/securing-your-webhooks#validating-payloads-from-github
-		payload, err := github.ValidatePayload(r, []byte("development"))
+		payload, err := github.ValidatePayload(r, []byte(os.Getenv("GITHUB_APP_WEBHOOK_SECRET")))
 		if err != nil {
 			log.Println(err)
 			http.Error(w, "Forbidden", http.StatusForbidden)
