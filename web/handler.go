@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/swinton/example-golang-github-app/gh"
-	"github.com/swinton/example-golang-github-app/probotize"
+	"github.com/swinton/example-golang-github-app/go-probot"
 )
 
 var ctx = context.Background()
@@ -24,10 +24,11 @@ type HookResponse struct {
 // HookRouter returns a new webhook router that can be plugged into an HTTP server to receive webhooks
 func HookRouter(app gh.App, path string) *mux.Router {
 	r := mux.NewRouter()
+	r.Use(probot.ProbotMiddleware)
 
-	r.HandleFunc(path, probotize.Probotize(func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		// Get our Probot from the request context
-		probot, _ := probotize.FromContext(r.Context())
+		probot, _ := probot.FromContext(r.Context())
 		log.Printf("probot is: %s\n", probot)
 
 		// Read the incoming request
@@ -90,7 +91,7 @@ func HookRouter(app gh.App, path string) *mux.Router {
 		}
 		w.Header().Add("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(resp)
-	})).Methods("POST")
+	}).Methods("POST")
 
 	return r
 }
