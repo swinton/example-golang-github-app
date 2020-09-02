@@ -18,19 +18,15 @@ const probotKey contextKey = "probot"
 // Middleware for Probot features
 func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Duplicate the body, so that subsequent handlers can still access it
-		body, _ := ioutil.ReadAll(r.Body)
-		r.Body.Close()
-
 		// Reset will return a new ReadCloser for the body that can be passed to subsequent handlers
-		reset := func(b []byte) io.ReadCloser {
-			return ioutil.NopCloser(bytes.NewBuffer(body))
+		reset := func(old io.ReadCloser, b []byte) io.ReadCloser {
+			old.Close()
+			return ioutil.NopCloser(bytes.NewBuffer(b))
 		}
 
 		// Validate the payload
 		// Per the docs: https://docs.github.com/en/developers/webhooks-and-events/securing-your-webhooks#validating-payloads-from-github
-		r.Body = reset(body)
-		_, err := github.ValidatePayload(r, []byte("development"))
+		payload, err := github.ValidatePayload(r, []byte("development"))
 		if err != nil {
 			log.Println(err)
 			http.Error(w, "Forbidden", http.StatusForbidden)
@@ -39,8 +35,8 @@ func Middleware(next http.Handler) http.Handler {
 
 		log.Printf("signature validates: %s\n", r.Header.Get("X-Hub-Signature"))
 
-		// Reset the body again for subsequent handlers to access
-		r.Body = reset(body)
+		// Reset the body for subsequent handlers to access
+		r.Body = reset(r.Body, payload)
 
 		// Call the next handler, with modified context.
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), probotKey, "alive")))
