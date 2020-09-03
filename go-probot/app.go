@@ -1,7 +1,12 @@
-package gh
+package probot
 
 import (
+	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/google/go-github/github"
@@ -19,8 +24,32 @@ type Installation struct {
 	ID int64
 }
 
+// NewApp instantiates a GitHub App from environment variables
+func NewApp() *App {
+	// Read GitHub App credentials from environment
+	baseURL, exists := os.LookupEnv("GITHUB_ENTERPRISE_BASE_URL")
+	if !exists {
+		log.Fatal("Unable to load GitHub Enterprise Base URL from environment")
+	}
+
+	privateKey, err := ioutil.ReadFile(os.Getenv("GITHUB_APP_PRIVATE_KEY_PATH"))
+	if err != nil {
+		log.Fatal(fmt.Sprintf("Unable to load GitHub App private key from file: %s", os.Getenv("GITHUB_APP_PRIVATE_KEY_PATH")))
+	}
+
+	id, err := strconv.ParseInt(os.Getenv("GITHUB_APP_ID"), 10, 64)
+	if err != nil {
+		log.Fatal(fmt.Sprintf("Unable to load GitHub App: %s", os.Getenv("GITHUB_APP_ID")))
+	}
+
+	// Instantiate GitHub App
+	app := &App{GitHubEnterpriseBaseURL: baseURL, ID: id, Key: privateKey}
+
+	return app
+}
+
 // NewEnterpriseClient instantiates a new GitHub Client using the App and Installation
-func NewEnterpriseClient(app App, installation Installation) (*github.Client, error) {
+func NewEnterpriseClient(app *App, installation Installation) (*github.Client, error) {
 	// Shared transport to reuse TCP connections.
 	tr := http.DefaultTransport
 	itr, err := ghinstallation.New(tr, app.ID, installation.ID, app.Key)

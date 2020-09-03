@@ -10,7 +10,6 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/gorilla/mux"
 
-	"github.com/swinton/example-golang-github-app/gh"
 	"github.com/swinton/example-golang-github-app/go-probot"
 )
 
@@ -22,14 +21,14 @@ type HookResponse struct {
 }
 
 // HookRouter returns a new webhook router that can be plugged into an HTTP server to receive webhooks
-func HookRouter(app gh.App, path string) *mux.Router {
+func HookRouter(path string) *mux.Router {
 	r := mux.NewRouter()
 	r.Use(probot.NewMiddleware())
 
 	r.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		// Get our Probot from the request context
-		probot, _ := probot.FromContext(r.Context())
-		log.Printf("probot is: %s\n", probot)
+		// Get our App from the request context
+		app, _ := probot.FromContext(r.Context())
+		log.Printf("received GitHub App ID %d\n", app.ID)
 
 		// Read the incoming request
 		payload, err := ioutil.ReadAll(r.Body)
@@ -60,8 +59,8 @@ func HookRouter(app gh.App, path string) *mux.Router {
 			log.Printf("issue id: %d\n", *e.Issue.ID)
 
 			// Instantiate client
-			installation := gh.Installation{ID: *e.Installation.ID}
-			client, err := gh.NewEnterpriseClient(app, installation)
+			installation := probot.Installation{ID: *e.Installation.ID}
+			client, err := probot.NewEnterpriseClient(app, installation)
 			if err != nil {
 				log.Println(err)
 				http.Error(w, "Server Error", http.StatusInternalServerError)

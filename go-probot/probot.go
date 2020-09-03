@@ -19,6 +19,9 @@ const probotKey contextKey = "probot"
 
 // NewMiddleware returns a mux.MiddlewareFunc encapsulating Probot features
 func NewMiddleware() mux.MiddlewareFunc {
+	app := NewApp()
+	log.Printf("loaded GitHub App ID %d\n", app.ID)
+
 	// Middleware for Probot features
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -43,13 +46,13 @@ func NewMiddleware() mux.MiddlewareFunc {
 			r.Body = reset(r.Body, payload)
 
 			// Call the next handler, with modified context.
-			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), probotKey, "alive")))
+			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), probotKey, app)))
 		})
 	}
 }
 
 // FromContext exposes probot features to request handlers
-func FromContext(ctx context.Context) (string, bool) {
-	probot, ok := ctx.Value(probotKey).(string)
+func FromContext(ctx context.Context) (*App, bool) {
+	probot, ok := ctx.Value(probotKey).(*App)
 	return probot, ok
 }
