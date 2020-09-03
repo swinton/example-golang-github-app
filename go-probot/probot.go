@@ -3,6 +3,7 @@ package probot
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"io/ioutil"
 	"log"
@@ -12,6 +13,11 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/gorilla/mux"
 )
+
+// PayloadInstallation represents the incoming installation part of the payload
+type PayloadInstallation struct {
+	Installation *github.Installation `json:"installation"`
+}
 
 type contextKey string
 
@@ -33,7 +39,7 @@ func NewMiddleware() mux.MiddlewareFunc {
 
 			// Validate the payload
 			// Per the docs: https://docs.github.com/en/developers/webhooks-and-events/securing-your-webhooks#validating-payloads-from-github
-			payload, err := github.ValidatePayload(r, []byte(os.Getenv("GITHUB_APP_WEBHOOK_SECRET")))
+			payloadBytes, err := github.ValidatePayload(r, []byte(os.Getenv("GITHUB_APP_WEBHOOK_SECRET")))
 			if err != nil {
 				log.Println(err)
 				http.Error(w, "Forbidden", http.StatusForbidden)
@@ -42,8 +48,13 @@ func NewMiddleware() mux.MiddlewareFunc {
 
 			log.Printf("signature validates: %s\n", r.Header.Get("X-Hub-Signature"))
 
+			// Get the installation from the payload
+			payload := &PayloadInstallation{}
+			json.Unmarshal(payloadBytes, payload)
+			log.Printf("installation: %d\n", payload.Installation.GetID())
+
 			// Reset the body for subsequent handlers to access
-			r.Body = reset(r.Body, payload)
+			r.Body = reset(r.Body, payloadBytes)
 
 			// Call the next handler, with modified context.
 			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), probotKey, app)))
