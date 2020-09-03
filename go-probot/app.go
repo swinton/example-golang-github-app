@@ -17,6 +17,7 @@ type App struct {
 	GitHubEnterpriseBaseURL string
 	ID                      int64
 	Key                     []byte
+	Secret                  string
 }
 
 // Installation encapsulates the fields needed to define an installation of a GitHub App
@@ -42,8 +43,13 @@ func NewApp() *App {
 		log.Fatal(fmt.Sprintf("Unable to load GitHub App: %s", os.Getenv("GITHUB_APP_ID")))
 	}
 
+	secret, exists := os.LookupEnv("GITHUB_APP_WEBHOOK_SECRET")
+	if !exists {
+		log.Fatal("Unable to load webhook secret from environment")
+	}
+
 	// Instantiate GitHub App
-	app := &App{GitHubEnterpriseBaseURL: baseURL, ID: id, Key: privateKey}
+	app := &App{GitHubEnterpriseBaseURL: baseURL, ID: id, Key: privateKey, Secret: secret}
 
 	return app
 }

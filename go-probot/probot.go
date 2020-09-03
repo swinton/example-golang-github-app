@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/google/go-github/github"
 	"github.com/gorilla/mux"
@@ -39,7 +38,7 @@ func NewMiddleware() mux.MiddlewareFunc {
 
 			// Validate the payload
 			// Per the docs: https://docs.github.com/en/developers/webhooks-and-events/securing-your-webhooks#validating-payloads-from-github
-			payloadBytes, err := github.ValidatePayload(r, []byte(os.Getenv("GITHUB_APP_WEBHOOK_SECRET")))
+			payloadBytes, err := github.ValidatePayload(r, []byte(app.Secret))
 			if err != nil {
 				log.Println(err)
 				http.Error(w, "Forbidden", http.StatusForbidden)
