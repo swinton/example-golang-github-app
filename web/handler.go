@@ -24,7 +24,7 @@ type HookResponse struct {
 // HookRouter returns a new webhook router that can be plugged into an HTTP server to receive webhooks
 func HookRouter(app gh.App, path string) *mux.Router {
 	r := mux.NewRouter()
-	r.Use(probot.Middleware)
+	r.Use(probot.NewMiddleware())
 
 	r.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		// Get our Probot from the request context
