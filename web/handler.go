@@ -3,7 +3,6 @@ package web
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -28,30 +27,9 @@ func HookRouter(path string) *mux.Router {
 	r.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		// Get our App from the request context
 		app, _ := probot.AppFromContext(r.Context())
-		log.Printf("received GitHub App ID %d\n", app.ID)
-
-		// Read the incoming request
-		payload, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			log.Println(err)
-			http.Error(w, "Server Error", http.StatusInternalServerError)
-			return
-		}
-
-		// Parse the incoming request into an event
-		event, err := github.ParseWebHook(github.WebHookType(r), payload)
-		if err != nil {
-			log.Println(err)
-			http.Error(w, "Bad Request", http.StatusBadRequest)
-			return
-		}
-
-		// Log the request headers and body
-		log.Printf("headers: %v\n", r.Header)
-		log.Printf("event type: %T\n", event)
 
 		// Handle the event
-		switch e := event.(type) {
+		switch e := app.Event.(type) {
 		case *github.IssuesEvent:
 			log.Printf("issue owner: %s\n", *e.Repo.Owner.Login)
 			log.Printf("issue repo: %s\n", *e.Repo.Name)
@@ -60,7 +38,7 @@ func HookRouter(path string) *mux.Router {
 			// Create a comment back on the issue
 			// https://github.com/google/go-github/blob/d57a3a84ba041135efb6b7ad3991f827c93c306a/github/issues_comments.go#L101-L117
 			newComment := &github.IssueComment{Body: github.String("## :wave: :earth_americas:\n\n![fellowshipoftheclaps](https://user-images.githubusercontent.com/27806/91333726-91c46f00-e793-11ea-9724-dc2e18ca28d0.gif)")}
-			comment, _, err := app.Client.Issues.CreateComment(ctx, *e.Repo.Owner.Login, *e.Repo.Name, int(*e.Issue.ID), newComment)
+			comment, _, err := app.Client.Issues.CreateComment(ctx, *e.Repo.Owner.Login, *e.Repo.Name, int(e.Issue.GetID()), newComment)
 			if err != nil {
 				log.Println(err)
 				http.Error(w, "Server Error", http.StatusInternalServerError)

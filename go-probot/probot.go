@@ -45,12 +45,24 @@ func NewMiddleware() mux.MiddlewareFunc {
 				return
 			}
 
+			// Log the request headers
 			log.Printf("signature validates: %s\n", r.Header.Get("X-Hub-Signature"))
+			log.Printf("headers: %v\n", r.Header)
 
 			// Get the installation from the payload
 			payload := &PayloadInstallation{}
 			json.Unmarshal(payloadBytes, payload)
 			log.Printf("installation: %d\n", payload.Installation.GetID())
+			log.Printf("received GitHub App ID %d\n", app.ID)
+
+			// Parse the incoming request into an event
+			app.Event, err = github.ParseWebHook(github.WebHookType(r), payloadBytes)
+			if err != nil {
+				log.Println(err)
+				http.Error(w, "Bad Request", http.StatusBadRequest)
+				return
+			}
+			log.Printf("event type: %T\n", app.Event)
 
 			// Instantiate client
 			installation := Installation{ID: payload.Installation.GetID()}
