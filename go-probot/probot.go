@@ -2,7 +2,7 @@ package probot
 
 import (
 	"bytes"
-	"context"
+	ctx "context"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -20,7 +20,7 @@ type PayloadInstallation struct {
 
 type contextKey string
 
-const probotAppKey contextKey = "probotApp"
+const probotContextKey contextKey = "probotContext"
 
 // NewMiddleware returns a mux.MiddlewareFunc encapsulating Probot features
 func NewMiddleware() mux.MiddlewareFunc {
@@ -35,6 +35,8 @@ func NewMiddleware() mux.MiddlewareFunc {
 				old.Close()
 				return ioutil.NopCloser(bytes.NewBuffer(b))
 			}
+
+			context := NewContext(app)
 
 			// Validate the payload
 			// Per the docs: https://docs.github.com/en/developers/webhooks-and-events/securing-your-webhooks#validating-payloads-from-github
@@ -56,35 +58,35 @@ func NewMiddleware() mux.MiddlewareFunc {
 			log.Printf("received GitHub App ID %d\n", app.ID)
 
 			// Parse the incoming request into an event
-			app.Event, err = github.ParseWebHook(github.WebHookType(r), payloadBytes)
+			context.Payload, err = github.ParseWebHook(github.WebHookType(r), payloadBytes)
 			if err != nil {
 				log.Println(err)
 				http.Error(w, "Bad Request", http.StatusBadRequest)
 				return
 			}
-			log.Printf("event type: %T\n", app.Event)
+			log.Printf("event type: %T\n", context.Payload)
 
 			// Instantiate client
 			installation := Installation{ID: payload.Installation.GetID()}
-			app.Client, err = NewEnterpriseClient(app, installation)
+			context.GitHub, err = NewEnterpriseClient(app, installation)
 			if err != nil {
 				log.Println(err)
 				http.Error(w, "Server Error", http.StatusInternalServerError)
 				return
 			}
-			log.Printf("client %s instantiated for %s\n", app.Client.UserAgent, app.Client.BaseURL)
+			log.Printf("client %s instantiated for %s\n", context.GitHub.UserAgent, context.GitHub.BaseURL)
 
 			// Reset the body for subsequent handlers to access
 			r.Body = reset(r.Body, payloadBytes)
 
 			// Call the next handler, with modified context.
-			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), probotAppKey, app)))
+			next.ServeHTTP(w, r.WithContext(ctx.WithValue(r.Context(), probotContextKey, context)))
 		})
 	}
 }
 
-// AppFromContext exposes probot features to request handlers
-func AppFromContext(ctx context.Context) (*App, bool) {
-	probot, ok := ctx.Value(probotAppKey).(*App)
+// FromContext exposes probot features to request handlers
+func FromContext(context ctx.Context) (*Context, bool) {
+	probot, ok := context.Value(probotContextKey).(*Context)
 	return probot, ok
 }
