@@ -27,7 +27,7 @@ func HookRouter(path string) *mux.Router {
 
 	r.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		// Get our App from the request context
-		app, _ := probot.FromContext(r.Context())
+		app, _ := probot.AppFromContext(r.Context())
 		log.Printf("received GitHub App ID %d\n", app.ID)
 
 		// Read the incoming request

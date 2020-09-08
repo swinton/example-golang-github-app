@@ -20,7 +20,7 @@ type PayloadInstallation struct {
 
 type contextKey string
 
-const probotKey contextKey = "probot"
+const probotAppKey contextKey = "probotApp"
 
 // NewMiddleware returns a mux.MiddlewareFunc encapsulating Probot features
 func NewMiddleware() mux.MiddlewareFunc {
@@ -66,13 +66,13 @@ func NewMiddleware() mux.MiddlewareFunc {
 			r.Body = reset(r.Body, payloadBytes)
 
 			// Call the next handler, with modified context.
-			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), probotKey, app)))
+			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), probotAppKey, app)))
 		})
 	}
 }
 
-// FromContext exposes probot features to request handlers
-func FromContext(ctx context.Context) (*App, bool) {
-	probot, ok := ctx.Value(probotKey).(*App)
+// AppFromContext exposes probot features to request handlers
+func AppFromContext(ctx context.Context) (*App, bool) {
+	probot, ok := ctx.Value(probotAppKey).(*App)
 	return probot, ok
 }
