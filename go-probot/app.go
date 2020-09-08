@@ -14,10 +14,10 @@ import (
 
 // App encapsulates the fields needed to define a GitHub App
 type App struct {
-	GitHubEnterpriseBaseURL string
-	ID                      int64
-	Key                     []byte
-	Secret                  string
+	BaseURL string
+	ID      int64
+	Key     []byte
+	Secret  string
 }
 
 // Installation encapsulates the fields needed to define an installation of a GitHub App
@@ -28,9 +28,9 @@ type Installation struct {
 // NewApp instantiates a GitHub App from environment variables
 func NewApp() *App {
 	// Read GitHub App credentials from environment
-	baseURL, exists := os.LookupEnv("GITHUB_ENTERPRISE_BASE_URL")
+	baseURL, exists := os.LookupEnv("GITHUB_BASE_URL")
 	if !exists {
-		log.Fatal("Unable to load GitHub Enterprise Base URL from environment")
+		log.Fatal("Unable to load GitHub Base URL from environment")
 	}
 
 	privateKey, err := ioutil.ReadFile(os.Getenv("GITHUB_APP_PRIVATE_KEY_PATH"))
@@ -49,7 +49,7 @@ func NewApp() *App {
 	}
 
 	// Instantiate GitHub App
-	app := &App{GitHubEnterpriseBaseURL: baseURL, ID: id, Key: privateKey, Secret: secret}
+	app := &App{BaseURL: baseURL, ID: id, Key: privateKey, Secret: secret}
 
 	return app
 }
@@ -63,8 +63,8 @@ func NewEnterpriseClient(app *App, installation Installation) (*github.Client, e
 		return nil, err
 	}
 
-	itr.BaseURL = app.GitHubEnterpriseBaseURL
-	client, err := github.NewEnterpriseClient(app.GitHubEnterpriseBaseURL, app.GitHubEnterpriseBaseURL, &http.Client{Transport: itr})
+	itr.BaseURL = app.BaseURL
+	client, err := github.NewEnterpriseClient(app.BaseURL, app.BaseURL, &http.Client{Transport: itr})
 	if err != nil {
 		return nil, err
 	}
