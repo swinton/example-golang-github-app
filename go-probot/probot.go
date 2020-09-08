@@ -52,6 +52,16 @@ func NewMiddleware() mux.MiddlewareFunc {
 			json.Unmarshal(payloadBytes, payload)
 			log.Printf("installation: %d\n", payload.Installation.GetID())
 
+			// Instantiate client
+			installation := Installation{ID: payload.Installation.GetID()}
+			app.Client, err = NewEnterpriseClient(app, installation)
+			if err != nil {
+				log.Println(err)
+				http.Error(w, "Server Error", http.StatusInternalServerError)
+				return
+			}
+			log.Printf("client %s instantiated for %s\n", app.Client.UserAgent, app.Client.BaseURL)
+
 			// Reset the body for subsequent handlers to access
 			r.Body = reset(r.Body, payloadBytes)
 

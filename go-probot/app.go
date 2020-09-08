@@ -18,6 +18,7 @@ type App struct {
 	ID      int64
 	Key     []byte
 	Secret  string
+	Client  *github.Client
 }
 
 // Installation encapsulates the fields needed to define an installation of a GitHub App
