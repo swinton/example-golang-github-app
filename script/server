@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -e
+
+cd "$( dirname $0 )/.."
+
+# Use reflex for simple reloading in response to file changes
+reflex -s go run cmd/example-golang-github-app/main.go
